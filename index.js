@@ -118,12 +118,25 @@ async function run() {
       res.send(result);
     });
 
-    // app.patch("/review/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const filter = { _id: ObjectId(id) };
-    //   const user = req.body;
-    //   const option = { upsert: true };
-    // });
+    app.patch("/review/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const review = req.body;
+      const option = { upsert: true };
+
+      const updatedUser = {
+        $set: {
+          text: review.text,
+          ratings: review.ratings,
+        },
+      };
+      const result = await reviewCollection.updateOne(
+        filter,
+        updatedUser,
+        option
+      );
+      res.send(result);
+    });
 
     app.get("/review/:id", async (req, res) => {
       const id = req.params.id;
