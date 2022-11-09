@@ -33,13 +33,15 @@ function verifyJwt(req, res, next) {
     next();
   });
 }
+const serviceCollection = client.db("photographer").collection("services");
+const reviewCollection = client.db("photographer").collection("reviews");
 
 async function run() {
   try {
     await client.connect();
 
-    const serviceCollection = client.db("photographer").collection("services");
-    const reviewCollection = client.db("photographer").collection("reviews");
+    // const serviceCollection = client.db("photographer").collection("services");
+    // const reviewCollection = client.db("photographer").collection("reviews");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -91,7 +93,8 @@ async function run() {
 
     app.get("/reviews", verifyJwt, async (req, res) => {
       const decoded = req.decoded;
-      if (decoded.email !== req.query.email) {
+
+      if (decoded?.email !== req.query?.email) {
         res.status(403).send({ message: "Unauthorized Access" });
       }
       let query = {};
