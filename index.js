@@ -27,7 +27,9 @@ async function run() {
     //Services
     app.get("/services", async (req, res) => {
       const query = {};
-      const cursor = serviceCollection.find(query);
+      const cursor = serviceCollection
+        .find(query)
+        .sort({ borough: 1, _id: -1 });
       const services = await cursor.limit(3).toArray();
       res.send(services);
     });
@@ -63,14 +65,27 @@ async function run() {
 
     app.get("/reviews", async (req, res) => {
       let query = {};
+      if (req.query.serviceId) {
+        query = {
+          service_id: req.query.serviceId,
+        };
+      }
       if (req.query.email) {
         query = {
           email: req.query.email,
         };
       }
-      const cursor = reviewCollection.find(query);
+      const cursor = reviewCollection.find(query).sort({ borough: 1, _id: -1 });
       const reviews = await cursor.toArray();
       res.send(reviews);
+    });
+
+    app.delete("/reviews/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: ObjectId(id) };
+      const result = await reviewCollection.deleteOne(query);
+      res.send(result);
     });
   } catch (error) {
     console.log(error.name.bgRed, error.massage);
