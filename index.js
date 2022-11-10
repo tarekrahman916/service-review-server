@@ -3,7 +3,6 @@ const cors = require("cors");
 const app = express();
 require("dotenv").config();
 const port = process.env.PORT || 5000;
-const colors = require("colors");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 var jwt = require("jsonwebtoken");
 
@@ -33,15 +32,13 @@ function verifyJwt(req, res, next) {
     next();
   });
 }
-const serviceCollection = client.db("photographer").collection("services");
-const reviewCollection = client.db("photographer").collection("reviews");
 
 async function run() {
   try {
     await client.connect();
 
-    // const serviceCollection = client.db("photographer").collection("services");
-    // const reviewCollection = client.db("photographer").collection("reviews");
+    const serviceCollection = client.db("photographer").collection("services");
+    const reviewCollection = client.db("photographer").collection("reviews");
 
     app.post("/jwt", (req, res) => {
       const user = req.body;
@@ -91,18 +88,29 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/reviews", verifyJwt, async (req, res) => {
-      const decoded = req.decoded;
-
-      if (decoded?.email !== req.query?.email) {
-        res.status(403).send({ message: "Unauthorized Access" });
-      }
+    app.get("/all-reviews", async (req, res) => {
       let query = {};
+
       if (req.query.serviceId) {
         query = {
           service_id: req.query.serviceId,
         };
       }
+
+      const cursor = reviewCollection.find(query).sort({ borough: 1, _id: -1 });
+      const reviews = await cursor.toArray();
+      res.send(reviews);
+    });
+
+    app.get("/reviews", verifyJwt, async (req, res) => {
+      let query = {};
+
+      const decoded = req.decoded;
+
+      if (decoded?.email !== req.query.email) {
+        res.status(403).send({ message: "Unauthorized Access" });
+      }
+
       if (req.query.email) {
         query = {
           email: req.query.email,
@@ -148,7 +156,7 @@ async function run() {
       res.send(review);
     });
   } catch (error) {
-    console.log(error.name.bgRed, error.massage);
+    console.log(error);
   }
 }
 
