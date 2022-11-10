@@ -35,11 +35,14 @@ function verifyJwt(req, res, next) {
 
 async function run() {
   try {
-    await client.connect();
+    const serviceCollection = client
+      .db("johnsPhotography")
+      .collection("services");
+    const reviewCollection = client
+      .db("johnsPhotography")
+      .collection("reviews");
 
-    const serviceCollection = client.db("photographer").collection("services");
-    const reviewCollection = client.db("photographer").collection("reviews");
-
+    //jwt
     app.post("/jwt", (req, res) => {
       const user = req.body;
       console.log(user);
@@ -49,7 +52,7 @@ async function run() {
       res.send({ token });
     });
 
-    //Services
+    //services
     app.get("/services", async (req, res) => {
       const query = {};
       const cursor = serviceCollection
@@ -59,7 +62,7 @@ async function run() {
       res.send(services);
     });
 
-    app.get("/allServices", async (req, res) => {
+    app.get("/all-services", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
       const services = await cursor.toArray();
@@ -80,13 +83,7 @@ async function run() {
       res.send(service);
     });
 
-    //reviews
-    app.post("/reviews", async (req, res) => {
-      const review = req.body;
-      const result = await reviewCollection.insertOne(review);
-      console.log(result);
-      res.send(result);
-    });
+    //Reviews
 
     app.get("/all-reviews", async (req, res) => {
       let query = {};
@@ -103,14 +100,13 @@ async function run() {
     });
 
     app.get("/reviews", verifyJwt, async (req, res) => {
-      let query = {};
-
       const decoded = req.decoded;
 
       if (decoded?.email !== req.query.email) {
         res.status(403).send({ message: "Unauthorized Access" });
       }
 
+      let query = {};
       if (req.query.email) {
         query = {
           email: req.query.email,
@@ -119,6 +115,13 @@ async function run() {
       const cursor = reviewCollection.find(query).sort({ borough: 1, _id: -1 });
       const reviews = await cursor.toArray();
       res.send(reviews);
+    });
+
+    app.post("/reviews", async (req, res) => {
+      const review = req.body;
+      const result = await reviewCollection.insertOne(review);
+      console.log(result);
+      res.send(result);
     });
 
     app.delete("/reviews/:id", async (req, res) => {
@@ -155,12 +158,10 @@ async function run() {
       const review = await reviewCollection.findOne(query);
       res.send(review);
     });
-  } catch (error) {
-    console.log(error);
-  }
+  } catch (error) {}
 }
 
-run();
+run().catch((err) => console.error(err));
 
 app.get("/", (req, res) => {
   res.send("Server is running");
